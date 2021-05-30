@@ -8,16 +8,19 @@ import time
 import random
 import string
 import math
-
+from dotenv import dotenv_values
 
 '''
 mysql connection part
 '''
 
-db = mysql.connector.connect(host = "Tarang",
-user = "root",
-password = "wiseone",
-database = "pegasus");
+env = dotenv_values(".env")
+
+
+db = mysql.connector.connect(host = env["HOST"],
+user = env["USER"],
+password = env["PASSWORD"],
+database = env["DATABASE"]);
 
 # cursor
 cursor = db.cursor()
