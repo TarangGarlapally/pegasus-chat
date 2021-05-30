@@ -3,10 +3,68 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QGridLayout, QLabel, QLineEdit,QMainWindow,QPushButton, QScrollArea, QWidget, QVBoxLayout
 import sys,time
 import image_rc, add_rc
+import mysql.connector
+import time
+import random
+import string
+import math
+
+
+'''
+mysql connection part
+'''
+
+db = mysql.connector.connect(host = "Tarang",
+user = "root",
+password = "wiseone",
+database = "pegasus");
+
+# cursor
+cursor = db.cursor()
+
+'''
+mysql connection part end
+'''
+
+
+'''
+DB queries
+'''
+
+
+
+def getMessages(name):
+    cursor.execute("select * from messages where contact = '%s'"%name)
+    messages = cursor.fetchall();
+    return [{
+    'time': message[1],
+    'message': message[2],
+    'recieved': True if message[3]=="recieved" else False} for message in messages]
+
+
+
+def insertMessage(content, mtype, contact, seen = True):
+    timestamp = math.floor(time.time()*1000)
+    uniqid = str(timestamp)+''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
+    val = (uniqid, timestamp, content, mtype, 1, contact)
+    sql = """insert into messages (id, timestamp, content, type, seen, contact) values (%s, %s, %s, %s, %s, %s)"""
+    cursor = db.cursor()
+    cursor.execute(sql, val)
+    db.commit()
+
+
+'''
+DB queries end
+'''
+
+
+
+
 
 '''
 global functions
 '''
+
 def own_date_label(text):
     label=QLabel(text)
     label.setStyleSheet("color:white;\nfont: 87 8pt Arial Black")
@@ -54,6 +112,7 @@ class add(QWidget):
 
 
 
+
 class Chat(QMainWindow):
     def __init__(self):
         super(Chat,self).__init__()
@@ -67,39 +126,22 @@ class Chat(QMainWindow):
         '''
         Below List contains all the contacts of the user(needs to be added dynamically) and their buttons need to be stored in the class
         '''
-        self.contacts=["John Doe","Jane Doe","Jolly","Tarang"]
+
+        # Reading contacts
+        cursor.execute("select * from contacts")
+        contacts = cursor.fetchall()
+
+        self.contacts=contacts
         self.contactsList=self.findChild(QVBoxLayout,"contactsList")
         for contact in self.contacts:
-            self.contactsList.addWidget(own_push_button(contact))
+            self.contactsList.addWidget(own_push_button(contact[0]))
         self.contactButtons=[]
         for contact in self.contacts:
-            name=contact.replace(' ','')
+            name=contact[0]
             self.contactButtons.append(self.findChild(QPushButton,name))
         
 
-        '''
-        all chat messages 
-        '''
-        self.chats={
-            "John Doe":
-                [
-                    {'time':"Friday 1:24 PM",'message':"Hey"},
-                    {'time':"Friday 1:24 PM",'message':"How are you?"}
-
-                ],
-            "Jane Doe":
-                [
-                    {'time':"Saturday 12:26 AM",'message':"I will be late"},
-                    {'time':"Saturday 12:26 AM",'message':"More Work"}
-                ],
-            "Jolly":
-                [
-                    {'time':"Monday 1:01 PM",'message':"You there?"}
-                ],
-            "Tarang":
-                []
-        }
-
+        
         '''
         Adding previous messages(for now dummy)
         '''
@@ -129,7 +171,7 @@ class Chat(QMainWindow):
         '''
         mapping=[]
         for i in range(0,len(self.contacts)):
-            mapping.append((self.contactButtons[i],self.contacts[i]))
+            mapping.append((self.contactButtons[i],self.contacts[i][0]))
         for button,name in mapping:
             button.clicked.connect(lambda state,name=name: self.messageSection(name))
 
@@ -139,7 +181,7 @@ class Chat(QMainWindow):
     
     def messageSection(self,name):
         self.findChild(QLabel,"headName").setText(name)
-        messages=self.chats[name]
+        messages=getMessages(name)
         for i in reversed(range(self.gridlayout.count())): 
             self.gridlayout.itemAt(i).widget().setParent(None)
         self.i=0
@@ -147,7 +189,7 @@ class Chat(QMainWindow):
             self.gridlayout.addWidget(own_date_label(messages[0]['time']),0,1)
             self.i += 1
             for message in messages:
-                self.gridlayout.addWidget(own_message_label(message["message"],False),self.i,0)
+                self.gridlayout.addWidget(own_message_label(message["message"], False),self.i, 0 if message["recieved"] else 2)
                 self.i += 1
                 
         
@@ -163,6 +205,8 @@ class Chat(QMainWindow):
         gridlayout.addWidget(newLabel,self.i,2)
 
         self.i += 1
+
+        insertMessage(message, "sent", "karthik.pasupulatei@gmail.com", True)
 
 
 
