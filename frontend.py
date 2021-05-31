@@ -208,8 +208,7 @@ class Chat(QMainWindow):
         gridlayout.addWidget(newLabel,self.i,2)
 
         self.i += 1
-
-        insertMessage(message, "sent", "karthik.pasupulatei@gmail.com", True)
+        insertMessage(message, "sent", self.findChild(QLabel,"headName").text(), True)
 
 
 
