@@ -56,6 +56,14 @@ def insertMessage(content, mtype, contact, seen = True):
     db.commit()
 
 
+def insertContact(contact, fname, lname):
+    sql = """insert into contacts values(%s, %s, %s)"""
+    val = (contact, fname, lname)
+    cursor = db.cursor()
+    cursor.execute(sql, val)
+    db.commit()
+
+
 '''
 DB queries end
 '''
