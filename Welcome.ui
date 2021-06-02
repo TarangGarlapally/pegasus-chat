@@ -612,7 +612,7 @@ QLineEdit { border-radius: 3px; }</string>
 QPushButton:hover { background-color: #66c011; }</string>
              </property>
              <property name="text">
-              <string>Sing Up</string>
+              <string>Sign Up</string>
              </property>
             </widget>
            </widget>

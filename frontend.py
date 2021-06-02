@@ -9,6 +9,18 @@ import random
 import string
 import math
 from dotenv import dotenv_values
+import firebase
+
+
+'''
+Firebase part
+'''
+firebase = firebase.init()
+auth = firebase.auth()
+user = "none"
+'''
+Firebase part end
+'''
 
 '''
 mysql connection part
@@ -76,6 +88,14 @@ DB queries end
 global functions
 '''
 
+def showAlert(message, description, title):
+    msg = QtWidgets.QMessageBox()
+    msg.setIcon(QtWidgets.QMessageBox.Information if message=="Information" else QtWidgets.QMessageBox.Critical)
+    msg.setText(message)
+    msg.setInformativeText(description)
+    msg.setWindowTitle(title)
+    msg.exec_()
+
 def own_date_label(text):
     label=QLabel(text)
     label.setStyleSheet("color:white;\nfont: 87 8pt Arial Black")
@@ -132,7 +152,6 @@ class Chat(QMainWindow):
         Loading the chatWindow UI
         '''
         uic.loadUi('chat.ui',self)
-        
 
         '''
         Below List contains all the contacts of the user(needs to be added dynamically) and their buttons need to be stored in the class
@@ -250,11 +269,56 @@ class welcome(QMainWindow):
         button press event
         '''
         chatWindow=Chat()
-        self.findChild(QPushButton,"loginButton").clicked.connect(lambda state,chatWindow=chatWindow: self.next(chatWindow))
+        self.findChild(QPushButton,"loginButton").clicked.connect(lambda state, chatWindow=chatWindow: self.next("login", chatWindow))
+        self.findChild(QPushButton,"singupButton").clicked.connect(lambda state, chatWindow=chatWindow: self.next("signup", chatWindow))
     
-    def next(self,chatWindow):
-        self.close()
-        chatWindow.display()
+    def next(self,type,chatWindow):
+        if(type == "login"):
+            email = self.findChild(QLineEdit,"username").text()
+            password = self.findChild(QLineEdit,"password").text()
+            if(email == "" or password == ""):
+                showAlert('Incomplete details', 'Please fill all the fields', 'Error')
+                return
+            try:
+                global user
+                user = auth.sign_in_with_email_and_password(email, password)
+                print(user)
+                verified = auth.get_account_info(user['idToken'])["users"][0]["emailVerified"]
+                if(not verified):
+                    showAlert("Not verified", "Please verify your account to continue.", "Failed")
+                    auth.current_user = None
+                    return
+                self.close()
+                chatWindow.display()
+            except Exception as e:
+                print(e)
+                showAlert("Authenticaton Failed", "The email or password may be incorrect", "Failed")
+        else:
+            name = self.findChild(QLineEdit,"name").text()
+            email = self.findChild(QLineEdit,"email").text()
+            password = self.findChild(QLineEdit,"password_2").text()
+            reenter = self.findChild(QLineEdit,"reenter").text()
+
+            if(name == "" or email == "" or password == "" or reenter == ""):
+                showAlert('Incomplete details', 'Please fill all the fields!', 'Error')
+                return
+            if(password != reenter):
+                showAlert('Error', "The passwords don't match!", "Error")
+                return
+            if(len(password)<8):
+                showAlert("Weak password", "Password should be atleast 8 characters long", "Error")
+                return
+            try:
+                user = auth.create_user_with_email_and_password(email, password)
+                auth.send_email_verification(user['idToken'])
+                showAlert("Information", "We've sen't you an email to verify your account! Please verify your account to continue.", "Success!")
+                print(user)
+                auth.current_user = None
+            except Exception as e:
+                showAlert("Error", "User with this email already exists", "Failed")
+                return
+
+
     
 
 
