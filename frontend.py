@@ -1,6 +1,6 @@
 from PyQt5 import QtWidgets,uic
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QGridLayout, QLabel, QLineEdit,QMainWindow,QPushButton, QScrollArea, QWidget, QVBoxLayout
+from PyQt5.QtCore import Qt, fixed
+from PyQt5.QtWidgets import QApplication, QGridLayout, QHBoxLayout, QLabel, QLineEdit,QMainWindow,QPushButton, QScrollArea, QSpacerItem ,QSizePolicy, QWidget, QVBoxLayout
 import sys,time
 import image_rc, add_rc
 import mysql.connector
@@ -54,7 +54,7 @@ def getMessages(name):
     return [{
     'time': message[1],
     'message': message[2],
-    'recieved': True if message[3]=="recieved" else False} for message in messages]
+    'sent': True if message[3]=="sent" else False} for message in messages]
 
 
 
@@ -97,19 +97,32 @@ def showAlert(message, description, title):
     msg.exec_()
 
 def own_date_label(text):
+    hbox=QHBoxLayout()
     label=QLabel(text)
+    label.setSizePolicy(QSizePolicy.Fixed,QSizePolicy.Fixed)
+    label.setFixedWidth(40)
+    label.setMinimumHeight(20)
     label.setStyleSheet("color:white;\nfont: 87 8pt Arial Black")
     label.setAlignment(Qt.AlignCenter)
-    return label
-
+    hbox.addWidget(label)
+    return hbox
 def own_message_label(text,sent):
+    hbox=QHBoxLayout()
     label=QLabel(text)
-    label.setStyleSheet("background-color:#333399;color:#fff;font-size:20px;margin:15px 0px 15px 0px;padding:5px 0px 5px 0px;border:0px solid transparent;border-radius:5px")
+    label.setSizePolicy(QSizePolicy.MinimumExpanding,QSizePolicy.Fixed)
+    label.setMaximumWidth(450)
+    label.setMinimumHeight(60)
+    label.setWordWrap(True)
+    label.setStyleSheet("background-color:#333399;color:#fff;font-size:20px;margin:15px 0px 15px 0px;padding:5px;border:0px solid transparent;border-radius:5px")
     if sent:
         label.setAlignment(Qt.AlignRight)
+        hbox.addStretch(1)
+        hbox.addWidget(label)
     else:
         label.setAlignment(Qt.AlignLeft)
-    return label
+        hbox.addWidget(label)
+        hbox.addStretch(1)
+    return hbox
 
 def own_push_button(text):
     button=QPushButton(text)
@@ -175,17 +188,13 @@ class Chat(QMainWindow):
         '''
         Adding previous messages(for now dummy)
         '''
-        self.gridlayout=self.findChild(QGridLayout,"chatLayout")
-        for i in range(3):
-            self.gridlayout.setColumnStretch(i,1)
-        for i in range(11):
-            self.gridlayout.setRowStretch(i,1)
-        self.i=0
-        
-        # scrollArea=self.findChild(QScrollArea,"chatArea")
-        # scrollArea.setWidget(gridlayout)
-        # scrollArea.setWidgetResizable(True)
-        
+        self.vlayout=self.findChild(QVBoxLayout,"chatLayout")
+        self.vlayout.setAlignment(Qt.AlignTop)
+
+        self.scrollArea=self.findChild(QScrollArea,"scrollArea")
+        scroll_bar = self.scrollArea.verticalScrollBar()
+        scroll_bar.rangeChanged.connect(lambda: scroll_bar.setValue(scroll_bar.maximum()))
+                
 
 
         '''
@@ -193,6 +202,8 @@ class Chat(QMainWindow):
         '''
         self.sendButton=self.findChild(QPushButton,"sendButton")
         self.sendButton.clicked.connect(self.send)
+        inputField=self.findChild(QLineEdit,"message")
+        inputField.returnPressed.connect(self.send)
         addWindow=add()
         self.findChild(QPushButton,"addButton").clicked.connect(lambda state,addWindow=addWindow: self.add(addWindow))
 
@@ -211,31 +222,29 @@ class Chat(QMainWindow):
     
     def messageSection(self,name):
         self.findChild(QLabel,"headName").setText(name)
+        while self.vlayout.count():
+            child = self.vlayout.takeAt(0)
+            if child.widget():
+                child.widget().setParent(None)
+            else:
+                child.layout().setParent(None)
         messages=getMessages(name)
-        for i in reversed(range(self.gridlayout.count())): 
-            self.gridlayout.itemAt(i).widget().setParent(None)
-        self.i=0
         if len(messages)!=0:
-            self.gridlayout.addWidget(own_date_label(messages[0]['time']),0,1)
-            self.i += 1
+            self.vlayout.addLayout(own_date_label(messages[0]['time']))
             for message in messages:
-                self.gridlayout.addWidget(own_message_label(message["message"], False),self.i, 0 if message["recieved"] else 2)
-                self.i += 1
-                
+                self.vlayout.addLayout(own_message_label(message["message"],message["sent"]))
         
-
+    
     def send(self):
         inputField=self.findChild(QLineEdit,"message")
         message=inputField.text()
-        newLabel=own_message_label(message,False)
-        inputField.clear()
-
-        gridlayout=self.findChild(QGridLayout,"chatLayout")
-
-        gridlayout.addWidget(newLabel,self.i,2)
-
-        self.i += 1
-        insertMessage(message, "sent", self.findChild(QLabel,"headName").text(), True)
+        if message!="":
+            newMessageLayout=own_message_label(message,True)
+            inputField.clear()
+            print(self.scrollArea.verticalScrollBar().maximum())
+            self.vlayout.addLayout(newMessageLayout)
+            insertMessage(message, "sent", self.findChild(QLabel,"headName").text(), True)
+        
 
 
 
@@ -294,12 +303,13 @@ class welcome(QMainWindow):
                 print(e)
                 showAlert("Authenticaton Failed", "The email or password may be incorrect", "Failed")
         else:
-            name = self.findChild(QLineEdit,"name").text()
+            fname = self.findChild(QLineEdit,"fname").text()
+            lname = self.findChild(QLineEdit,"lname").text()
             email = self.findChild(QLineEdit,"email").text()
             password = self.findChild(QLineEdit,"password_2").text()
             reenter = self.findChild(QLineEdit,"reenter").text()
 
-            if(name == "" or email == "" or password == "" or reenter == ""):
+            if(fname == "" or lname == "" or email == "" or password == "" or reenter == ""):
                 showAlert('Incomplete details', 'Please fill all the fields!', 'Error')
                 return
             if(password != reenter):
