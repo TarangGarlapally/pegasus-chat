@@ -248,9 +248,8 @@ class Chat(QMainWindow):
         message=inputField.text()
         if message!="":
             newMessageLayout=own_message_label(message,True)
-            timestamp = math.floor(time.time()*1000)
             inputField.clear()
-            self.vlayout.addLayout(own_date_label(timestamp))
+            self.vlayout.addLayout(own_date_label(message['time']))
             self.vlayout.addLayout(newMessageLayout)
             insertMessage(message, "sent", self.findChild(QLabel,"headName").text(), True)
         
