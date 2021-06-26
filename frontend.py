@@ -5,7 +5,7 @@ import sys,time
 import image_rc, add_rc
 import mysql.connector
 import time
-import random
+import random, datetime
 import string
 import math
 from dotenv import dotenv_values
@@ -97,10 +97,13 @@ def showAlert(message, description, title):
     msg.exec_()
 
 def own_date_label(text):
+    week_days=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+    date=datetime.datetime.fromtimestamp(float(text)//1000.0)
+    time_o=""+str(date.day)+" "+week_days[date.month-1]+" "+str(date.year)+" "+str(date.time())
     hbox=QHBoxLayout()
-    label=QLabel(text)
-    label.setSizePolicy(QSizePolicy.Fixed,QSizePolicy.Fixed)
-    label.setFixedWidth(40)
+    label=QLabel(time_o)
+    label.setSizePolicy(QSizePolicy.Minimum,QSizePolicy.Fixed)
+    label.setMinimumWidth(70)
     label.setMinimumHeight(20)
     label.setStyleSheet("color:white;\nfont: 87 8pt Arial Black")
     label.setAlignment(Qt.AlignCenter)
@@ -222,16 +225,21 @@ class Chat(QMainWindow):
     
     def messageSection(self,name):
         self.findChild(QLabel,"headName").setText(name)
-        while self.vlayout.count():
-            child = self.vlayout.takeAt(0)
-            if child.widget():
-                child.widget().setParent(None)
-            else:
-                child.layout().setParent(None)
+        def deleteItems(layout):
+             if layout is not None:
+                 while layout.count():
+                     item = layout.takeAt(0)
+                     widget = item.widget()
+                     if widget is not None:
+                         widget.deleteLater()
+                     else:
+                         deleteItems(item.layout())
+        deleteItems(self.vlayout)
+        
         messages=getMessages(name)
         if len(messages)!=0:
-            self.vlayout.addLayout(own_date_label(messages[0]['time']))
             for message in messages:
+                self.vlayout.addLayout(own_date_label(message['time']))
                 self.vlayout.addLayout(own_message_label(message["message"],message["sent"]))
         
     
@@ -241,7 +249,7 @@ class Chat(QMainWindow):
         if message!="":
             newMessageLayout=own_message_label(message,True)
             inputField.clear()
-            print(self.scrollArea.verticalScrollBar().maximum())
+            self.vlayout.addLayout(own_date_label(message['time']))
             self.vlayout.addLayout(newMessageLayout)
             insertMessage(message, "sent", self.findChild(QLabel,"headName").text(), True)
         
@@ -280,6 +288,13 @@ class welcome(QMainWindow):
         chatWindow=Chat()
         self.findChild(QPushButton,"loginButton").clicked.connect(lambda state, chatWindow=chatWindow: self.next("login", chatWindow))
         self.findChild(QPushButton,"singupButton").clicked.connect(lambda state, chatWindow=chatWindow: self.next("signup", chatWindow))
+        self.findChild(QLineEdit,"username").returnPressed.connect(lambda chatWindow=chatWindow: self.next("login", chatWindow))
+        self.findChild(QLineEdit,"password").returnPressed.connect(lambda chatWindow=chatWindow: self.next("login", chatWindow))
+        self.findChild(QLineEdit,"fname").returnPressed.connect(lambda chatWindow=chatWindow: self.next("signup", chatWindow))
+        self.findChild(QLineEdit,"lname").returnPressed.connect(lambda chatWindow=chatWindow: self.next("signup", chatWindow))
+        self.findChild(QLineEdit,"email").returnPressed.connect(lambda chatWindow=chatWindow: self.next("signup", chatWindow))
+        self.findChild(QLineEdit,"password_2").returnPressed.connect(lambda chatWindow=chatWindow: self.next("signup", chatWindow))
+        self.findChild(QLineEdit,"reenter").returnPressed.connect(lambda chatWindow=chatWindow: self.next("signup", chatWindow))
     
     def next(self,type,chatWindow):
         if(type == "login"):
@@ -343,3 +358,6 @@ def display():
 
 if __name__ == "__main__":
     display()
+    
+    
+
