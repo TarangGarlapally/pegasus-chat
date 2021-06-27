@@ -2,14 +2,13 @@ from PyQt5 import QtWidgets,uic
 from PyQt5.QtCore import Qt, fixed
 from PyQt5.QtWidgets import QApplication, QGridLayout, QHBoxLayout, QLabel, QLineEdit,QMainWindow,QPushButton, QScrollArea, QSpacerItem ,QSizePolicy, QWidget, QVBoxLayout
 import sys,time
-import image_rc, add_rc
-import mysql.connector
 import time
-import random, datetime
-import string
+import datetime
 import math
-from dotenv import dotenv_values
 import firebase
+import stream
+import mysql_pegasus as db
+
 
 
 '''
@@ -18,68 +17,13 @@ Firebase part
 firebase = firebase.init()
 auth = firebase.auth()
 user = "none"
+rtdb = firebase.database()
+
+
+
 '''
 Firebase part end
 '''
-
-'''
-mysql connection part
-'''
-
-env = dotenv_values(".env")
-
-
-db = mysql.connector.connect(host = env["HOST"],
-user = env["USER"],
-password = env["PASSWORD"],
-database = env["DATABASE"]);
-
-# cursor
-cursor = db.cursor()
-
-'''
-mysql connection part end
-'''
-
-
-'''
-DB queries
-'''
-
-
-
-def getMessages(name):
-    cursor.execute("select * from messages where contact = '%s'"%name)
-    messages = cursor.fetchall();
-    return [{
-    'time': message[1],
-    'message': message[2],
-    'sent': True if message[3]=="sent" else False} for message in messages]
-
-
-
-def insertMessage(content, mtype, contact, seen = True):
-    timestamp = math.floor(time.time()*1000)
-    uniqid = str(timestamp)+''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
-    val = (uniqid, timestamp, content, mtype, 1, contact)
-    sql = """insert into messages (id, timestamp, content, type, seen, contact) values (%s, %s, %s, %s, %s, %s)"""
-    cursor = db.cursor()
-    cursor.execute(sql, val)
-    db.commit()
-
-
-def insertContact(contact, fname, lname):
-    sql = """insert into contacts values(%s, %s, %s)"""
-    val = (contact, fname, lname)
-    cursor = db.cursor()
-    cursor.execute(sql, val)
-    db.commit()
-
-
-'''
-DB queries end
-'''
-
 
 
 
@@ -161,6 +105,7 @@ class add(QWidget):
 
 
 class Chat(QMainWindow):
+
     def __init__(self):
         super(Chat,self).__init__()
 
@@ -174,8 +119,7 @@ class Chat(QMainWindow):
         '''
 
         # Reading contacts
-        cursor.execute("select * from contacts")
-        contacts = cursor.fetchall()
+        contacts = db.getContacts()
 
         self.contacts=contacts
         self.contactsList=self.findChild(QVBoxLayout,"contactsList")
@@ -218,12 +162,12 @@ class Chat(QMainWindow):
             mapping.append((self.contactButtons[i],self.contacts[i][0]))
         for button,name in mapping:
             button.clicked.connect(lambda state,name=name: self.messageSection(name))
-
             
     
         
     
     def messageSection(self,name):
+
         self.findChild(QLabel,"headName").setText(name)
         def deleteItems(layout):
              if layout is not None:
@@ -235,12 +179,13 @@ class Chat(QMainWindow):
                      else:
                          deleteItems(item.layout())
         deleteItems(self.vlayout)
-        
-        messages=getMessages(name)
+
+        messages=db.getMessages(name)
         if len(messages)!=0:
             for message in messages:
                 self.vlayout.addLayout(own_date_label(message['time']))
                 self.vlayout.addLayout(own_message_label(message["message"],message["sent"]))
+        
         
     
     def send(self):
@@ -252,7 +197,7 @@ class Chat(QMainWindow):
             timestamp = math.floor(time.time()*1000)
             self.vlayout.addLayout(own_date_label(timestamp))
             self.vlayout.addLayout(newMessageLayout)
-            insertMessage(message, "sent", self.findChild(QLabel,"headName").text(), True)
+            db.insertMessage(message, "sent", self.findChild(QLabel,"headName").text(), True)
         
 
 
@@ -314,6 +259,7 @@ class welcome(QMainWindow):
                     auth.current_user = None
                     return
                 self.close()
+                my_stream = rtdb.child(user["localId"]).stream(stream.stream_handler)
                 chatWindow.display()
             except Exception as e:
                 print(e)
