@@ -86,19 +86,28 @@ class add(QWidget):
     
     def display(self,chatWindow):
         self.show()
-
+        
         '''
         logic for adding contact
         '''
+        self.findChild(QLineEdit,"email").returnPressed.connect(lambda chatWindow=chatWindow: self.next(chatWindow))
+        self.findChild(QLineEdit,"fname").returnPressed.connect(lambda chatWindow=chatWindow: self.next(chatWindow))
+        self.findChild(QLineEdit,"lname").returnPressed.connect(lambda chatWindow=chatWindow: self.next(chatWindow))
 
-
-
+        
         '''
         returning to chatWindow
         '''
         self.findChild(QPushButton,"addcontactButton").clicked.connect(lambda state,chatWindow=chatWindow: self.next(chatWindow))
     
     def next(self,chatWindow):
+        contact = self.findChild(QLineEdit,"email").text()
+        fname = self.findChild(QLineEdit,"fname").text()
+        lname = self.findChild(QLineEdit,"lname").text()
+        if(fname == "" or lname == "" or contact == "" ):
+                showAlert('Incomplete details', 'Please fill all the fields!', 'Error')
+                return
+        insertContact(contact,fname,lname)
         self.close()
 
 

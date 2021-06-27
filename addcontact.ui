@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>522</width>
-    <height>343</height>
+    <height>388</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -32,8 +32,8 @@
        </property>
        <property name="minimumSize">
         <size>
-         <width>250</width>
-         <height>100</height>
+         <width>200</width>
+         <height>80</height>
         </size>
        </property>
        <property name="font">
@@ -85,7 +85,7 @@
        <property name="minimumSize">
         <size>
          <width>350</width>
-         <height>200</height>
+         <height>250</height>
         </size>
        </property>
        <property name="styleSheet">
@@ -126,12 +126,84 @@ border-radius: 8px;</string>
 </string>
             </property>
             <property name="text">
-             <string>Name:</string>
+             <string>Email:</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="name">
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="email">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>200</width>
+              <height>30</height>
+             </size>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QLineEdit { border-radius: 3px;
+background:white; }</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_5">
+          <item>
+           <widget class="QLabel" name="label_2">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">QLabel { color: white; }</string>
+            </property>
+            <property name="text">
+             <string>First Name:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_2">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="fname">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -173,12 +245,25 @@ background:white; }</string>
 </string>
             </property>
             <property name="text">
-             <string>Email:</string>
+             <string>Last Name:</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="email">
+           <spacer name="horizontalSpacer_3">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="lname">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
               <horstretch>0</horstretch>
