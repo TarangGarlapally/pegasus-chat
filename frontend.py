@@ -32,6 +32,7 @@ Firebase part end
 global functions
 '''
 
+
 def showAlert(message, description, title):
     msg = QtWidgets.QMessageBox()
     msg.setIcon(QtWidgets.QMessageBox.Information if message=="Information" else QtWidgets.QMessageBox.Critical)
@@ -107,7 +108,14 @@ class add(QWidget):
         if(fname == "" or lname == "" or contact == "" ):
                 showAlert('Incomplete details', 'Please fill all the fields!', 'Error')
                 return
-        insertContact(contact,fname,lname)
+        receiver = rtdb.child("users").order_by_child("email").equal_to(contact).get()
+        for user in receiver.each():
+            receiver = user.val()
+            db.insertContact(receiver["email"], receiver["fname"], receiver["lname"])
+            break
+        else:
+            showAlert("Not found", "User not found! Invite them to use this app!", "Error")
+        
         self.close()
 
 
@@ -207,6 +215,7 @@ class Chat(QMainWindow):
             self.vlayout.addLayout(own_date_label(timestamp))
             self.vlayout.addLayout(newMessageLayout)
             db.insertMessage(message, "sent", self.findChild(QLabel,"headName").text(), True)
+            stream.send(rtdb, self.findChild(QLabel,"headName").text(), user["email"], message)
         
 
 
@@ -268,7 +277,7 @@ class welcome(QMainWindow):
                     auth.current_user = None
                     return
                 self.close()
-                my_stream = rtdb.child(user["localId"]).stream(stream.stream_handler)
+                my_stream = rtdb.child(user["localId"]).stream(lambda x: stream.stream_handler(x, rtdb, user))
                 chatWindow.display()
             except Exception as e:
                 print(e)
@@ -292,15 +301,16 @@ class welcome(QMainWindow):
             try:
                 user = auth.create_user_with_email_and_password(email, password)
                 auth.send_email_verification(user['idToken'])
-                showAlert("Information", "We've sen't you an email to verify your account! Please verify your account to continue.", "Success!")
                 print(user)
+                try:
+                    rtdb.child("users").child(user["localId"]).set({"email":user["email"], "fname":fname, "lname":lname})
+                except Exception as e:
+                    print(e)
+                showAlert("Information", "We've sen't you an email to verify your account! Please verify your account to continue.", "Success!")
                 auth.current_user = None
             except Exception as e:
                 showAlert("Error", "User with this email already exists", "Failed")
                 return
-
-
-    
 
 
 

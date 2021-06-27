@@ -1,6 +1,10 @@
 import pyrebase
 from dotenv import dotenv_values
 
+def noquote(s):
+    return s
+pyrebase.pyrebase.quote = noquote
+
 env = dotenv_values(".env")
 
 def init():
