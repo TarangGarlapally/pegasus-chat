@@ -1,12 +1,20 @@
 import mysql_pegasus as db
 import firebase
+import time
+import datetime
+import math
+from PyQt5.QtWidgets import QLabel
+import frontend
 
 
-
-def checkAndAddMessage(rtdb, message):
+def checkAndAddMessage(rtdb, message, chatscreen):
     if(db.isContact(message["sender"])):
         try:
             db.insertMessage(message["message"], "received", message["sender"], seen = True)
+            if(chatscreen.findChild(QLabel,"headName").text() == message["sender"]):
+                timestamp = math.floor(time.time()*1000)
+                chatscreen.vlayout.addLayout(frontend.own_date_label(timestamp))
+                chatscreen.vlayout.addLayout(frontend.own_message_label(message["message"], False))
             return
         except Exception as e:
             print(e)
@@ -16,6 +24,10 @@ def checkAndAddMessage(rtdb, message):
         receiver = user.val()
         db.insertContact(receiver["email"], receiver["fname"], receiver["lname"])
         db.insertMessage(message["message"], "received", message["sender"], seen = True)
+        if(chatscreen.findChild(QLabel,"headName").text() == message["sender"]):
+            timestamp = math.floor(time.time()*1000)
+            chatscreen.vlayout.addLayout(frontend.own_date_label(timestamp))
+            chatscreen.vlayout.addLayout(frontend.own_message_label(message["message"], False))
         break 
     
 
@@ -32,7 +44,7 @@ def send(rtdb, contact, sender, message):
 
 
 # Firebase realtime db stream handler
-def stream_handler(stream, rtdb, user):
+def stream_handler(stream, rtdb, user, chatscreen):
     print(stream["path"])
     if(stream["data"] == None):
         return
@@ -40,11 +52,11 @@ def stream_handler(stream, rtdb, user):
         stream = [(k, v) for k, v in stream["data"].items()]
         for message in stream:
             message = message[1]
-            checkAndAddMessage(rtdb, message)
+            checkAndAddMessage(rtdb, message, chatscreen)
     else:
         # recieved single message
         message = stream["data"]
-        checkAndAddMessage(message)
+        checkAndAddMessage(rtdb, message, chatscreen)
     rtdb.child(user["localId"]).remove()
     
 

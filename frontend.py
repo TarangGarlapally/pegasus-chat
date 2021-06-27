@@ -231,8 +231,12 @@ class Chat(QMainWindow):
 
 
     def display(self):
+        self.my_stream = rtdb.child(user["localId"]).stream(lambda x: stream.stream_handler(x, rtdb, user, self))
         self.show()
-
+        
+    def closeEvent(self, event):
+        self.my_stream.close()
+        event.accept() # let the window close
 
 class welcome(QMainWindow):
     def __init__(self):
@@ -277,7 +281,6 @@ class welcome(QMainWindow):
                     auth.current_user = None
                     return
                 self.close()
-                my_stream = rtdb.child(user["localId"]).stream(lambda x: stream.stream_handler(x, rtdb, user))
                 chatWindow.display()
             except Exception as e:
                 print(e)
