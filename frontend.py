@@ -233,6 +233,7 @@ class Chat(QMainWindow):
     def display(self):
         self.my_stream = rtdb.child(user["localId"]).stream(lambda x: stream.stream_handler(x, rtdb, user, self))
         self.show()
+        #start ML model
         
     def closeEvent(self, event):
         self.my_stream.close()
