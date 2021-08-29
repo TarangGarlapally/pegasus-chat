@@ -8,7 +8,7 @@ import math
 import firebase
 import stream
 import mysql_pegasus as db
-
+import classify
 
 
 '''
@@ -200,6 +200,10 @@ class Chat(QMainWindow):
         messages=db.getMessages(name)
         if len(messages)!=0:
             for message in messages:
+
+                #test for toxicity
+                isToxic = classify.checkIfToxic(message["message"])
+
                 self.vlayout.addLayout(own_date_label(message['time']))
                 self.vlayout.addLayout(own_message_label(message["message"],message["sent"]))
         
@@ -215,6 +219,11 @@ class Chat(QMainWindow):
             self.vlayout.addLayout(own_date_label(timestamp))
             self.vlayout.addLayout(newMessageLayout)
             db.insertMessage(message, "sent", self.findChild(QLabel,"headName").text(), True)
+            
+            #check if toxic
+            classify.checkIfToxic(message)
+            
+            #send to firebase
             stream.send(rtdb, self.findChild(QLabel,"headName").text(), user["email"], message)
         
 
