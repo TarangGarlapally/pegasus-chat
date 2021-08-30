@@ -210,7 +210,7 @@ class Chat(QMainWindow):
                     self.vlayout.addLayout(own_message_label(message["message"],message["sent"]))
             self.timer = QTimer()
             self.timer.timeout.connect(lambda name=name: self.messageSection(name)) 
-            self.timer.setInterval(5000)
+            self.timer.setInterval(10000)
             self.timer.start()
         
         
@@ -259,7 +259,7 @@ class Chat(QMainWindow):
 
 
     def display(self):
-        self.my_stream = rtdb.child(user["localId"]).stream(lambda x: stream.stream_handler(x, rtdb, user, self))
+        self.my_stream = rtdb.child(user["localId"]).stream(lambda x: stream.stream_handler(x, rtdb, user))
         self.show()
         #start ML model
         
