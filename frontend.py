@@ -11,7 +11,7 @@ from dns.message import MessageSection
 import firebase
 import stream
 import mysql_pegasus as db
-
+import classify
 
 '''
 Firebase part
@@ -202,6 +202,10 @@ class Chat(QMainWindow):
             messages=db.getMessages(name)
             if len(messages)!=0:
                 for message in messages:
+
+                    #test for toxicity
+                    isToxic = classify.checkIfToxic(message["message"])
+
                     self.vlayout.addLayout(own_date_label(message['time']))
                     self.vlayout.addLayout(own_message_label(message["message"],message["sent"]))
             self.timer = QTimer()
@@ -233,6 +237,11 @@ class Chat(QMainWindow):
             self.vlayout.addLayout(own_date_label(timestamp))
             self.vlayout.addLayout(newMessageLayout)
             db.insertMessage(message, "sent", self.findChild(QLabel,"headName").text(), True)
+            
+            #check if toxic
+            classify.checkIfToxic(message)
+            
+            #send to firebase
             stream.send(rtdb, self.findChild(QLabel,"headName").text(), user["email"], message)
         
 
@@ -250,8 +259,13 @@ class Chat(QMainWindow):
 
 
     def display(self):
+        self.my_stream = rtdb.child(user["localId"]).stream(lambda x: stream.stream_handler(x, rtdb, user, self))
         self.show()
-
+        #start ML model
+        
+    def closeEvent(self, event):
+        self.my_stream.close()
+        event.accept() # let the window close
 
 class welcome(QMainWindow):
     def __init__(self):
@@ -297,7 +311,7 @@ class welcome(QMainWindow):
                     auth.current_user = None
                     return
                 self.close()
-                my_stream = rtdb.child(user["localId"]).stream(lambda x: stream.stream_handler(x, rtdb, user,chatWindow))
+                my_stream = rtdb.child(user["localId"]).stream(lambda x: stream.stream_handler(x, rtdb, user))
                 chatWindow.display()
             except Exception as e:
                 print(e)
