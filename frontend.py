@@ -1,14 +1,16 @@
 from PyQt5 import QtWidgets,uic
-from PyQt5.QtCore import Qt, fixed
-from PyQt5.QtWidgets import QApplication, QGridLayout, QHBoxLayout, QLabel, QLineEdit,QMainWindow,QPushButton, QScrollArea, QSpacerItem ,QSizePolicy, QWidget, QVBoxLayout
+from PyQt5 import QtCore
+from PyQt5.QtCore import Qt, QTimer, QThread
+from PyQt5.QtWidgets import QApplication, QHBoxLayout, QLabel, QLineEdit,QMainWindow,QPushButton, QScrollArea ,QSizePolicy, QWidget, QVBoxLayout
 import sys,time
 import time
 import datetime
+import threading
 import math
+from dns.message import MessageSection
 import firebase
 import stream
 import mysql_pegasus as db
-
 
 
 '''
@@ -31,6 +33,7 @@ Firebase part end
 '''
 global functions
 '''
+
 
 
 def showAlert(message, description, title):
@@ -78,6 +81,11 @@ def own_push_button(text):
     button.setStyleSheet("background-color:#333399;color:#fff;font-size:20px;margin:15px 0px 15px 0px;padding:5px 0px 5px 0px;border:0px solid transparent;border-radius:5px")
     return button
 
+    
+
+
+
+
 
 class add(QWidget):
     def __init__(self):
@@ -91,9 +99,9 @@ class add(QWidget):
         '''
         logic for adding contact
         '''
-        self.findChild(QLineEdit,"email").returnPressed.connect(lambda chatWindow=chatWindow: self.next(chatWindow))
-        self.findChild(QLineEdit,"fname").returnPressed.connect(lambda chatWindow=chatWindow: self.next(chatWindow))
-        self.findChild(QLineEdit,"lname").returnPressed.connect(lambda chatWindow=chatWindow: self.next(chatWindow))
+        self.findChild(QLineEdit,"email").returnPressed.connect(lambda state,chatWindow=chatWindow: self.next(chatWindow))
+        self.findChild(QLineEdit,"fname").returnPressed.connect(lambda state,chatWindow=chatWindow: self.next(chatWindow))
+        self.findChild(QLineEdit,"lname").returnPressed.connect(lambda state,chatWindow=chatWindow: self.next(chatWindow))
 
         
         '''
@@ -115,13 +123,14 @@ class add(QWidget):
             break
         else:
             showAlert("Not found", "User not found! Invite them to use this app!", "Error")
-        
+        chatWindow.renderContacts()
         self.close()
 
 
 
 
 class Chat(QMainWindow):
+
 
     def __init__(self):
         super(Chat,self).__init__()
@@ -130,27 +139,17 @@ class Chat(QMainWindow):
         Loading the chatWindow UI
         '''
         uic.loadUi('chat.ui',self)
-
+        
         '''
         Below List contains all the contacts of the user(needs to be added dynamically) and their buttons need to be stored in the class
         '''
 
         # Reading contacts
-        contacts = db.getContacts()
-
-        self.contacts=contacts
-        self.contactsList=self.findChild(QVBoxLayout,"contactsList")
-        for contact in self.contacts:
-            self.contactsList.addWidget(own_push_button(contact[0]))
-        self.contactButtons=[]
-        for contact in self.contacts:
-            name=contact[0]
-            self.contactButtons.append(self.findChild(QPushButton,name))
-        
+        self.renderContacts()
 
         
         '''
-        Adding previous messages(for now dummy)
+        Adding previous messages
         '''
         self.vlayout=self.findChild(QVBoxLayout,"chatLayout")
         self.vlayout.setAlignment(Qt.AlignTop)
@@ -168,40 +167,59 @@ class Chat(QMainWindow):
         self.sendButton.clicked.connect(self.send)
         inputField=self.findChild(QLineEdit,"message")
         inputField.returnPressed.connect(self.send)
-        addWindow=add()
-        self.findChild(QPushButton,"addButton").clicked.connect(lambda state,addWindow=addWindow: self.add(addWindow))
+        self.findChild(QPushButton,"addButton").clicked.connect(self.add)
 
         '''
         Below is the code for updating messageSection based on the contact selected
-        '''
+        '''    
+
+
+    def renderContacts(self):
+        contacts = db.getContacts()
+        self.contacts=contacts
+        self.contactsList=self.findChild(QVBoxLayout,"contactsList")
+        self.deleteItems(self.contactsList)
+        for contact in self.contacts:
+            self.contactsList.addWidget(own_push_button(contact[0]))
+        self.contactButtons=[]
+        for contact in self.contacts:
+            name=contact[0]
+            self.contactButtons.append(self.findChild(QPushButton,name))
+
         mapping=[]
         for i in range(0,len(self.contacts)):
             mapping.append((self.contactButtons[i],self.contacts[i][0]))
         for button,name in mapping:
             button.clicked.connect(lambda state,name=name: self.messageSection(name))
-            
-    
+
+    def messageSection(self,name):
+        if name==None or name=="":
+            pass
+        else:
+            self.findChild(QLabel,"headName").setText(name)
+            self.deleteItems(self.vlayout)
+
+            messages=db.getMessages(name)
+            if len(messages)!=0:
+                for message in messages:
+                    self.vlayout.addLayout(own_date_label(message['time']))
+                    self.vlayout.addLayout(own_message_label(message["message"],message["sent"]))
+            self.timer = QTimer()
+            self.timer.timeout.connect(lambda name=name: self.messageSection(name)) 
+            self.timer.setInterval(5000)
+            self.timer.start()
+        
         
     
-    def messageSection(self,name):
-
-        self.findChild(QLabel,"headName").setText(name)
-        def deleteItems(layout):
-             if layout is not None:
-                 while layout.count():
-                     item = layout.takeAt(0)
-                     widget = item.widget()
-                     if widget is not None:
-                         widget.deleteLater()
-                     else:
-                         deleteItems(item.layout())
-        deleteItems(self.vlayout)
-
-        messages=db.getMessages(name)
-        if len(messages)!=0:
-            for message in messages:
-                self.vlayout.addLayout(own_date_label(message['time']))
-                self.vlayout.addLayout(own_message_label(message["message"],message["sent"]))
+    def deleteItems(self,layout):
+        if layout is not None:
+            while layout.count():
+                item = layout.takeAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.deleteLater()
+                else:
+                    self.deleteItems(item.layout())
         
         
     
@@ -226,7 +244,8 @@ class Chat(QMainWindow):
 
         
     
-    def add(self,addWindow):
+    def add(self):
+        addWindow=add()
         addWindow.display(self)
 
 
@@ -239,6 +258,7 @@ class welcome(QMainWindow):
         super(welcome,self).__init__()
 
         uic.loadUi('Welcome.ui',self)
+
     def display(self):
         self.show()
         '''
@@ -277,7 +297,7 @@ class welcome(QMainWindow):
                     auth.current_user = None
                     return
                 self.close()
-                my_stream = rtdb.child(user["localId"]).stream(lambda x: stream.stream_handler(x, rtdb, user))
+                my_stream = rtdb.child(user["localId"]).stream(lambda x: stream.stream_handler(x, rtdb, user,chatWindow))
                 chatWindow.display()
             except Exception as e:
                 print(e)
@@ -316,14 +336,35 @@ class welcome(QMainWindow):
 
 
 
-def display():
+def display():  
     app=QApplication(sys.argv)
     welcomeWindow=welcome()
     welcomeWindow.display()
     app.exec_()
 
+# def connectToDuet():
+#     duet = sy.launch_duet(loopback=True)
+#     messages=db.getMessages("taranggarlapally@gmail.com")
+#     data=th.tensor([])
+#     for message in messages:
+#         msg=[]
+#         for i in message["message"]:
+#             msg.append(ord(i))
+#         msg.append(ord("\n"))
+#         data=th.cat([data, th.tensor(msg)])
+#         break
+    
+#     data = data.tag("Messages")
+#     data = data.describe("Some messages of the user")
+#     data_pointer = data.send(duet,searchable=True)
+#     print(duet.store.pandas)
+
+
 if __name__ == "__main__":
     display()
+
+    # connectToDuet()
+
     
     
 
