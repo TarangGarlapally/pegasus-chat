@@ -14,9 +14,12 @@ with open(filename, 'rb') as f:
     vectorizer, model = pickle.load(f)
 print("initialized model")
 
+
+def get_Vectorizer_model(): 
+    return (vectorizer , model)
 def checkIfToxic(message):
     df = vectorizer.transform(pd.DataFrame({"words":[message]})["words"])
     result = model.predict(df)
     
-    
+    print(result[0] == 1 )
     return result[0] == 1

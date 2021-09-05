@@ -6,6 +6,10 @@ import math
 from dotenv import dotenv_values
 import time
 
+#ML imports 
+import classify 
+#ML imports end
+
 '''
 mysql connection part
 '''
@@ -14,7 +18,7 @@ env = dotenv_values(".env")
 db = mysql.connector.connect(host = env["HOST"],
 user = env["USER"],
 password = env["PASSWORD"],
-database = env["DATABASE"]);
+database = env["DATABASE"])
 
 # cursor
 cursor = db.cursor()
@@ -31,21 +35,39 @@ mysql connection part end
 DB queries
 '''
 
+
+def getENV(name):
+    return env[name]
 def getMessages(name):
     cursor.execute("select * from messages where contact = '%s'"%name)
-    messages = cursor.fetchall();
+    messages = cursor.fetchall()
     return [{
     'time': message[1],
     'message': message[2],
-    'sent': True if message[3]=="sent" else False} for message in messages]
+    'sent': True if message[3]=="sent" else False
+    } 
+    
+    for message in messages]
 
 
-
+def getAllMessages(): 
+    cursor.execute("select * from messages")
+    messages = cursor.fetchall()
+    return [{
+    'time': message[1],
+    'message': message[2],
+    'sent': True if message[3]=="sent" else False, 
+    'toxic': message[6]
+    } 
+    
+    for message in messages]
 def insertMessage(content, mtype, contact, seen = True):
     timestamp = math.floor(time.time()*1000)
     uniqid = str(timestamp)+''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
-    val = (uniqid, timestamp, content, mtype, 1, contact)
-    sql = """insert into messages (id, timestamp, content, type, seen, contact) values (%s, %s, %s, %s, %s, %s)"""
+    isToxic  = classify.checkIfToxic(content)
+    
+    val = (uniqid, timestamp, content, mtype, 1, contact , int(isToxic) )
+    sql = """insert into messages (id, timestamp, content, type, seen, contact , toxic) values (%s, %s, %s, %s, %s, %s , %s)"""
     cursor = db.cursor()
     cursor.execute(sql, val)
     db.commit()
