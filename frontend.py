@@ -208,7 +208,7 @@ class Chat(QMainWindow):
                     self.vlayout.addLayout(own_message_label(message["message"],message["sent"]))
             self.timer = QTimer()
             self.timer.timeout.connect(lambda name=name: self.messageSection(name)) 
-            self.timer.setInterval(3000)
+            self.timer.setInterval(2000)
             self.timer.start()
         
         
