@@ -1,7 +1,7 @@
 from PyQt5 import QtWidgets,uic
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QLabel, QLineEdit,QMainWindow,QPushButton, QScrollArea ,QSizePolicy, QWidget, QVBoxLayout
-import sys,time
+import sys,time,os
 import time
 import datetime
 import math
@@ -208,7 +208,7 @@ class Chat(QMainWindow):
                     self.vlayout.addLayout(own_message_label(message["message"],message["sent"]))
             self.timer = QTimer()
             self.timer.timeout.connect(lambda name=name: self.messageSection(name)) 
-            self.timer.setInterval(1000)
+            self.timer.setInterval(3000)
             self.timer.start()
         
         
@@ -263,9 +263,8 @@ class Chat(QMainWindow):
         
     def closeEvent(self, event):
         self.my_stream.close()
-        cursor.close()
-        db.close()
         event.accept() # let the window close
+        os._exit(0)
 
 class welcome(QMainWindow):
     def __init__(self):

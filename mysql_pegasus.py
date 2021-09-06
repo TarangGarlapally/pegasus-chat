@@ -6,8 +6,6 @@ import math
 from dotenv import dotenv_values
 import time
 
-from oauth2client.crypt import _verify_signature
-from requests.adapters import SSLError
 
 '''
 mysql connection part
@@ -17,7 +15,7 @@ env = dotenv_values(".env")
 db = mysql.connector.connect(host = env["HOST"],
 user = env["USER"],
 password = env["PASSWORD"],
-database = env["DATABASE"], ssl_ca = env["SSL_CA"], ssl_cert = env["SSL_CERT"], ssl_key = env["SSL_KEY"])
+database = env["DATABASE"])
 
 
 
