@@ -1,13 +1,11 @@
 from PyQt5 import QtWidgets,uic
-from PyQt5 import QtCore
-from PyQt5.QtCore import Qt, QTimer, QThread
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QApplication, QHBoxLayout, QLabel, QLineEdit,QMainWindow,QPushButton, QScrollArea ,QSizePolicy, QWidget, QVBoxLayout
 import sys,time
 import time
 import datetime
-import threading
 import math
-from dns.message import MessageSection
+from mysql.connector import cursor
 import firebase
 import stream
 import mysql_pegasus as db
@@ -265,6 +263,8 @@ class Chat(QMainWindow):
         
     def closeEvent(self, event):
         self.my_stream.close()
+        cursor.close()
+        db.close()
         event.accept() # let the window close
 
 class welcome(QMainWindow):

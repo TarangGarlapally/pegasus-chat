@@ -6,6 +6,7 @@ import frontend
 
 
 
+
 def checkAndAddMessage(rtdb, message):
     if(db.isContact(message["sender"])):
         try:
