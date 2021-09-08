@@ -1,11 +1,13 @@
 from PyQt5 import QtWidgets,uic
-from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtWidgets import QApplication, QHBoxLayout, QLabel, QLineEdit,QMainWindow,QPushButton, QScrollArea ,QSizePolicy, QWidget, QVBoxLayout
+from PyQt5 import QtCore
+from PyQt5.QtCore import Qt, QTimer, QThread
+from PyQt5.QtWidgets import QApplication, QHBoxLayout, QLabel, QLineEdit,QMainWindow, QMessageBox,QPushButton, QScrollArea ,QSizePolicy, QWidget, QVBoxLayout
 import sys,time,os
-import time
+import time,functools
 import datetime
+import threading
 import math
-from mysql.connector import cursor
+from dns.message import MessageSection
 import firebase
 import stream
 import mysql_pegasus as db
@@ -55,23 +57,44 @@ def own_date_label(text):
     label.setAlignment(Qt.AlignCenter)
     hbox.addWidget(label)
     return hbox
-def own_message_label(text,sent):
+def own_message_label(chat,message):
+    text=message["message"]
+    sent=message["sent"]
+    time=message["time"]
+    isToxic=message["Toxic"]
+    isVisible=message["Visible"]
     hbox=QHBoxLayout()
     label=QLabel(text)
     label.setSizePolicy(QSizePolicy.MinimumExpanding,QSizePolicy.Fixed)
+    
     label.setMaximumWidth(450)
     label.setMinimumHeight(60)
     label.setWordWrap(True)
-    label.setStyleSheet("background-color:#333399;color:#fff;font-size:20px;margin:15px 0px 15px 0px;padding:5px;border:0px solid transparent;border-radius:5px")
     if sent:
+        label.setStyleSheet("background-color:#333399;color:#fff;font-size:20px;margin:15px 0px 15px 0px;padding:5px;border:0px solid transparent;border-radius:5px")
         label.setAlignment(Qt.AlignRight)
         hbox.addStretch(1)
         hbox.addWidget(label)
     else:
         label.setAlignment(Qt.AlignLeft)
+        if isToxic:
+            label.setStyleSheet("background-color:red;color:#fff;font-size:20px;margin:15px 0px 15px 0px;padding:5px;border:0px solid transparent;border-radius:5px")
+            label.setAlignment(Qt.AlignLeft)
+            if isVisible:
+                label.mousePressEvent = functools.partial(chat.reportNonToxic,time=time)
+                label.setAlignment(Qt.AlignLeft)
+            else:
+                label.setText("Potential Toxic Message. Click to View")
+                label.mousePressEvent = functools.partial(chat.viewMessage,time=time)
+                label.setAlignment(Qt.AlignLeft)
+        else:
+            label.setStyleSheet("background-color:#333399;color:#fff;font-size:20px;margin:15px 0px 15px 0px;padding:5px;border:0px solid transparent;border-radius:5px")
+            label.mousePressEvent = functools.partial(chat.reportToxic,time=time)
+            label.setAlignment(Qt.AlignLeft)
         hbox.addWidget(label)
         hbox.addStretch(1)
     return hbox
+    
 
 def own_push_button(text):
     button=QPushButton(text)
@@ -202,14 +225,53 @@ class Chat(QMainWindow):
                 for message in messages:
 
                     #test for toxicity
-                    isToxic = classify.checkIfToxic(message["message"])
+                    #isToxic = classify.checkIfToxic(message["message"])
 
                     self.vlayout.addLayout(own_date_label(message['time']))
-                    self.vlayout.addLayout(own_message_label(message["message"],message["sent"]))
+                    self.vlayout.addLayout(own_message_label(self,message))
             self.timer = QTimer()
             self.timer.timeout.connect(lambda name=name: self.messageSection(name)) 
             self.timer.setInterval(2000)
             self.timer.start()
+
+
+    '''
+    Below is the code for reporting a message as toxic
+    '''
+
+    def reportToxic(self,event,time=None):
+        response = QMessageBox.question(self, 'Report', "Report this message as toxic?", QMessageBox.Yes | QMessageBox.No)
+        if response == QMessageBox.Yes:
+            db.reportToxic(time)
+            self.messageSection(self.findChild(QLabel,"headName").text())
+        else:
+            print("Not reported")
+
+
+    '''
+    Below is the code for reporting a message as Non-toxic
+    '''
+
+    def reportNonToxic(self,event,time=None):
+        response = QMessageBox.question(self, 'Report', "Report this message as Non-toxic?", QMessageBox.Yes | QMessageBox.No)
+        if response == QMessageBox.Yes:
+            db.reportNonToxic(time)
+            self.messageSection(self.findChild(QLabel,"headName").text())
+        else:
+            print("Not reported")
+    
+    '''
+    Below is the code for viewing the message
+    '''
+    def viewMessage(self,event,time=None):
+        response = QMessageBox.question(self, 'View message?', "This message is flagged as 'Toxic'. Want to see it?", QMessageBox.Yes | QMessageBox.No)
+        if response == QMessageBox.Yes:
+            db.viewMessage(time)
+            self.messageSection(self.findChild(QLabel,"headName").text())
+        else:
+            print("Not viewed")
+
+
         
         
     
@@ -229,7 +291,7 @@ class Chat(QMainWindow):
         inputField=self.findChild(QLineEdit,"message")
         message=inputField.text()
         if message!="":
-            newMessageLayout=own_message_label(message,True)
+            newMessageLayout=own_message_label(self,message)
             inputField.clear()
             timestamp = math.floor(time.time()*1000)
             self.vlayout.addLayout(own_date_label(timestamp))

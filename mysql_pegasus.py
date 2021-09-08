@@ -40,7 +40,9 @@ def getMessages(name):
     return [{
     'time': message[1],
     'message': message[2],
-    'sent': True if message[3]=="sent" else False} for message in messages]
+    'Toxic':message[3],
+    'Visible':message[4],
+    'sent': True if message[5]=="sent" else False} for message in messages]
 
 
 
@@ -68,6 +70,41 @@ def getContacts():
 def isContact(contact):
     cursor.execute("select contact from contacts where contact = '{}'".format(contact))
     return cursor.fetchall()!=[]
+
+
+'''
+Below is the code for identifying the message based on it's
+timestamp and reporting it.
+'''
+
+def reportToxic(messageTimeStamp):
+    print(messageTimeStamp)
+    pass
+
+'''
+Below is the code for identifying the message based on it's
+timestamp and unreporting it.
+'''
+
+def reportNonToxic(messageTimeStamp):
+    print(messageTimeStamp)
+    pass
+
+'''
+Below is the code for viewing the message if user requested
+'''
+
+def viewMessage(messageTimeStamp):
+    print(messageTimeStamp)
+    sql = "UPDATE messages SET Visible = 1 WHERE timestamp = %s"
+    cursor.execute(sql,(messageTimeStamp,))
+    db.commit()
+
+    print(cursor.rowcount, "record(s) affected")
+
+
+
+
 '''
 DB queries end
 '''
