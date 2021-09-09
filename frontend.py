@@ -229,10 +229,10 @@ class Chat(QMainWindow):
 
                     self.vlayout.addLayout(own_date_label(message['time']))
                     self.vlayout.addLayout(own_message_label(self,message))
-            self.timer = QTimer()
-            self.timer.timeout.connect(lambda name=name: self.messageSection(name)) 
-            self.timer.setInterval(2000)
-            self.timer.start()
+            # self.timer = QTimer()
+            # self.timer.timeout.connect(lambda name=name: self.messageSection(name)) 
+            # self.timer.setInterval(2000)
+            # self.timer.start()
 
 
     '''
