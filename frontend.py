@@ -246,7 +246,7 @@ class Chat(QMainWindow):
         response = QMessageBox.question(self, 'Report', "Report this message as toxic?", QMessageBox.Yes | QMessageBox.No)
         if response == QMessageBox.Yes:
             db.reportToxic(time)
-            self.messageSection(self.findChild(QLabel,"headName").text(),self.scroll_bar.value())
+            # self.messageSection(self.findChild(QLabel,"headName").text())
         else:
             print("Not reported")
 
@@ -259,7 +259,7 @@ class Chat(QMainWindow):
         response = QMessageBox.question(self, 'Report', "Report this message as Non-toxic?", QMessageBox.Yes | QMessageBox.No)
         if response == QMessageBox.Yes:
             db.reportNonToxic(time)
-            self.messageSection(self.findChild(QLabel,"headName").text(),self.scroll_bar.value())
+            # self.messageSection(self.findChild(QLabel,"headName").text())
         else:
             print("Not reported")
     
@@ -270,7 +270,7 @@ class Chat(QMainWindow):
         response = QMessageBox.question(self, 'View message?', "This message is flagged as 'Toxic'. Want to see it?", QMessageBox.Yes | QMessageBox.No)
         if response == QMessageBox.Yes:
             db.viewMessage(time)
-            self.messageSection(self.findChild(QLabel,"headName").text(),self.scroll_bar.value())
+            # self.messageSection(self.findChild(QLabel,"headName").text())
         else:
             print("Not viewed")
 

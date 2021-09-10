@@ -79,7 +79,13 @@ timestamp and reporting it.
 
 def reportToxic(messageTimeStamp):
     print(messageTimeStamp)
-    pass
+    sql = "UPDATE messages SET Toxic = 1 WHERE timestamp = %s"
+    cursor.execute(sql,(messageTimeStamp,))
+    sql = "UPDATE messages SET Visible = 0 WHERE timestamp = %s"
+    cursor.execute(sql,(messageTimeStamp,))
+    db.commit()
+
+    print(cursor.rowcount, "record(s) affected")
 
 '''
 Below is the code for identifying the message based on it's
@@ -88,7 +94,11 @@ timestamp and unreporting it.
 
 def reportNonToxic(messageTimeStamp):
     print(messageTimeStamp)
-    pass
+    sql = "UPDATE messages SET Toxic = 0 WHERE timestamp = %s"
+    cursor.execute(sql,(messageTimeStamp,))
+    db.commit()
+
+    print(cursor.rowcount, "record(s) affected")
 
 '''
 Below is the code for viewing the message if user requested
