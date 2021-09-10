@@ -178,7 +178,6 @@ class Chat(QMainWindow):
         self.scrollArea=self.findChild(QScrollArea,"scrollArea")
         self.scroll_bar = self.scrollArea.verticalScrollBar()
         self.scroll_bar.rangeChanged.connect(lambda: self.scroll_bar.setValue(self.scroll_bar.maximum()))
-                
 
 
         '''
@@ -195,7 +194,7 @@ class Chat(QMainWindow):
         '''    
 
 
-    def renderContacts(self):
+    def renderContacts(self,noScroll=None):
         contacts = db.getContacts()
         self.contacts=contacts
         self.contactsList=self.findChild(QVBoxLayout,"contactsList")
@@ -206,17 +205,21 @@ class Chat(QMainWindow):
         for contact in self.contacts:
             name=contact[0]
             self.contactButtons.append(self.findChild(QPushButton,name))
-
         mapping=[]
         for i in range(0,len(self.contacts)):
             mapping.append((self.contactButtons[i],self.contacts[i][0]))
         for button,name in mapping:
             button.clicked.connect(lambda state,name=name: self.messageSection(name))
+        self.timer2 = QTimer()
+        self.timer2.timeout.connect(self.renderContacts) 
+        self.timer2.setInterval(2000)
+        self.timer2.start()
 
     def messageSection(self,name,scrollValue=None):
         if name==None or name=="":
             pass
         else:
+            
             self.findChild(QLabel,"headName").setText(name)
             self.deleteItems(self.vlayout)
 
@@ -229,14 +232,10 @@ class Chat(QMainWindow):
 
                     self.vlayout.addLayout(own_date_label(message['time']))
                     self.vlayout.addLayout(own_message_label(self,message))
-            self.timer = QTimer()
-            self.timer.timeout.connect(lambda name=name: self.messageSection(name)) 
-            self.timer.setInterval(2000)
-            self.timer.start()
-            if scrollValue!=None:
-                self.scroll_bar.setValue(scrollValue)
-            # else:
-            #     self.scroll_bar.setValue(self.scroll_bar.maximum())
+            self.timer1 = QTimer()
+            self.timer1.timeout.connect(lambda name=name: self.messageSection(name)) 
+            self.timer1.setInterval(2000)
+            self.timer1.start()
 
 
     '''
