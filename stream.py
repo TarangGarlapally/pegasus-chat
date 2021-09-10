@@ -7,7 +7,7 @@ import frontend
 
 
 
-def checkAndAddMessage(rtdb, message,chatWindow):
+def checkAndAddMessage(rtdb, message):
     if(db.isContact(message["sender"])):
         try:
             db.insertMessage(message["message"], "received", message["sender"], seen = True)
@@ -44,11 +44,12 @@ def stream_handler(stream, rtdb, user,chatWindow):
         stream = [(k, v) for k, v in stream["data"].items()]
         for message in stream:
             message = message[1]
-            checkAndAddMessage(rtdb, message,chatWindow)
+            print(message)
+            checkAndAddMessage(rtdb, message)
     else:
         # recieved single message
         message = stream["data"]
-        checkAndAddMessage(rtdb, message,chatWindow)
+        checkAndAddMessage(rtdb, message)
     rtdb.child(user["localId"]).remove()
     
 
