@@ -65,9 +65,13 @@ def insertMessage(content, mtype, contact, seen = True):
     timestamp = math.floor(time.time()*1000)
     uniqid = str(timestamp)+''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
     isToxic  = classify.checkIfToxic(content)
+    if isToxic:
+        isVisible = False
+    else:
+        isVisible = True
     
-    val = (uniqid, timestamp, content, mtype, 1, contact , int(isToxic) )
-    sql = """insert into messages (id, timestamp, content, type, seen, contact , toxic) values (%s, %s, %s, %s, %s, %s , %s)"""
+    val = (uniqid, timestamp, content, mtype, 1, contact , int(isToxic),int(isVisible) )
+    sql = """insert into messages (id, timestamp, content, type, seen, contact , toxic, visible) values (%s, %s, %s, %s, %s, %s , %s, %s)"""
     cursor = db.cursor()
     cursor.execute(sql, val)
     db.commit()
