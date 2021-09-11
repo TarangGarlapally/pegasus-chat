@@ -35,14 +35,14 @@ DB queries
 '''
 
 def getMessages(name):
-    cursor.execute("select * from messages where contact = '%s'"%name)
+    cursor.execute("select timestamp, content, toxic, visible, type from messages where contact = '%s'"%name)
     messages = cursor.fetchall();
     return [{
-    'time': message[1],
-    'message': message[2],
-    'Toxic':message[3],
-    'Visible':message[4],
-    'sent': True if message[5]=="sent" else False} for message in messages]
+    'time': message[0],
+    'message': message[1],
+    'Toxic':message[2],
+    'Visible':message[3],
+    'sent': True if message[4]=="sent" else False} for message in messages]
 
 
 
