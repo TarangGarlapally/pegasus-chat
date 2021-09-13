@@ -1,9 +1,9 @@
 from PyQt5 import QtWidgets,uic
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QTimer, QThread
-from PyQt5.QtWidgets import QApplication, QHBoxLayout, QLabel, QLineEdit,QMainWindow,QPushButton, QScrollArea ,QSizePolicy, QWidget, QVBoxLayout
-import sys,time
-import time
+from PyQt5.QtWidgets import QApplication, QHBoxLayout, QLabel, QLineEdit,QMainWindow, QMessageBox,QPushButton, QScrollArea ,QSizePolicy, QWidget, QVBoxLayout
+import sys,time,os
+import time,functools
 import datetime
 import threading
 import math
@@ -58,23 +58,44 @@ def own_date_label(text):
     label.setAlignment(Qt.AlignCenter)
     hbox.addWidget(label)
     return hbox
-def own_message_label(text,sent):
+def own_message_label(chat,message):
+    text=message["message"]
+    sent=message["sent"]
+    time=message["time"]
+    isToxic=message["Toxic"]
+    isVisible=message["Visible"]
     hbox=QHBoxLayout()
     label=QLabel(text)
     label.setSizePolicy(QSizePolicy.MinimumExpanding,QSizePolicy.Fixed)
+    
     label.setMaximumWidth(450)
     label.setMinimumHeight(60)
     label.setWordWrap(True)
-    label.setStyleSheet("background-color:#333399;color:#fff;font-size:20px;margin:15px 0px 15px 0px;padding:5px;border:0px solid transparent;border-radius:5px")
     if sent:
+        label.setStyleSheet("background-color:#333399;color:#fff;font-size:20px;margin:15px 0px 15px 0px;padding:5px;border:0px solid transparent;border-radius:5px")
         label.setAlignment(Qt.AlignRight)
         hbox.addStretch(1)
         hbox.addWidget(label)
     else:
         label.setAlignment(Qt.AlignLeft)
+        if isToxic:
+            label.setStyleSheet("background-color:red;color:#fff;font-size:20px;margin:15px 0px 15px 0px;padding:5px;border:0px solid transparent;border-radius:5px")
+            label.setAlignment(Qt.AlignLeft)
+            if isVisible:
+                label.mousePressEvent = functools.partial(chat.reportNonToxic,time=time)
+                label.setAlignment(Qt.AlignLeft)
+            else:
+                label.setText("Potential Toxic Message. Click to View")
+                label.mousePressEvent = functools.partial(chat.viewMessage,time=time)
+                label.setAlignment(Qt.AlignLeft)
+        else:
+            label.setStyleSheet("background-color:#333399;color:#fff;font-size:20px;margin:15px 0px 15px 0px;padding:5px;border:0px solid transparent;border-radius:5px")
+            label.mousePressEvent = functools.partial(chat.reportToxic,time=time)
+            label.setAlignment(Qt.AlignLeft)
         hbox.addWidget(label)
         hbox.addStretch(1)
     return hbox
+    
 
 def own_push_button(text):
     button=QPushButton(text)
@@ -156,9 +177,8 @@ class Chat(QMainWindow):
         self.vlayout.setAlignment(Qt.AlignTop)
 
         self.scrollArea=self.findChild(QScrollArea,"scrollArea")
-        scroll_bar = self.scrollArea.verticalScrollBar()
-        scroll_bar.rangeChanged.connect(lambda: scroll_bar.setValue(scroll_bar.maximum()))
-                
+        self.scroll_bar = self.scrollArea.verticalScrollBar()
+        self.scroll_bar.rangeChanged.connect(lambda: self.scroll_bar.setValue(self.scroll_bar.maximum()))
 
 
         '''
@@ -175,7 +195,7 @@ class Chat(QMainWindow):
         '''    
 
 
-    def renderContacts(self):
+    def renderContacts(self,noScroll=None):
         contacts = db.getContacts()
         self.contacts=contacts
         self.contactsList=self.findChild(QVBoxLayout,"contactsList")
@@ -186,17 +206,21 @@ class Chat(QMainWindow):
         for contact in self.contacts:
             name=contact[0]
             self.contactButtons.append(self.findChild(QPushButton,name))
-
         mapping=[]
         for i in range(0,len(self.contacts)):
             mapping.append((self.contactButtons[i],self.contacts[i][0]))
         for button,name in mapping:
             button.clicked.connect(lambda state,name=name: self.messageSection(name))
+        self.timer2 = QTimer()
+        self.timer2.timeout.connect(self.renderContacts) 
+        self.timer2.setInterval(2000)
+        self.timer2.start()
 
-    def messageSection(self,name):
+    def messageSection(self,name,scrollValue=None):
         if name==None or name=="":
             pass
         else:
+            
             self.findChild(QLabel,"headName").setText(name)
             self.deleteItems(self.vlayout)
 
@@ -205,14 +229,53 @@ class Chat(QMainWindow):
                 for message in messages:
 
                     #test for toxicity
-                    isToxic = classify.checkIfToxic(message["message"])
+                    #isToxic = classify.checkIfToxic(message["message"])
 
                     self.vlayout.addLayout(own_date_label(message['time']))
-                    self.vlayout.addLayout(own_message_label(message["message"],message["sent"]))
-            self.timer = QTimer()
-            self.timer.timeout.connect(lambda name=name: self.messageSection(name)) 
-            self.timer.setInterval(2000)
-            self.timer.start()
+                    self.vlayout.addLayout(own_message_label(self,message))
+            self.timer1 = QTimer()
+            self.timer1.timeout.connect(lambda name=name: self.messageSection(name)) 
+            self.timer1.setInterval(2000)
+            self.timer1.start()
+
+
+    '''
+    Below is the code for reporting a message as toxic
+    '''
+
+    def reportToxic(self,event,time=None):
+        response = QMessageBox.question(self, 'Report', "Report this message as toxic?", QMessageBox.Yes | QMessageBox.No)
+        if response == QMessageBox.Yes:
+            db.reportToxic(time)
+            # self.messageSection(self.findChild(QLabel,"headName").text())
+        else:
+            print("Not reported")
+
+
+    '''
+    Below is the code for reporting a message as Non-toxic
+    '''
+
+    def reportNonToxic(self,event,time=None):
+        response = QMessageBox.question(self, 'Report', "Report this message as Non-toxic?", QMessageBox.Yes | QMessageBox.No)
+        if response == QMessageBox.Yes:
+            db.reportNonToxic(time)
+            # self.messageSection(self.findChild(QLabel,"headName").text())
+        else:
+            print("Not reported")
+    
+    '''
+    Below is the code for viewing the message
+    '''
+    def viewMessage(self,event,time=None):
+        response = QMessageBox.question(self, 'View message?', "This message is flagged as 'Toxic'. Want to see it?", QMessageBox.Yes | QMessageBox.No)
+        if response == QMessageBox.Yes:
+            db.viewMessage(time)
+            # self.messageSection(self.findChild(QLabel,"headName").text())
+        else:
+            print("Not viewed")
+
+
         
         
     
@@ -232,9 +295,11 @@ class Chat(QMainWindow):
         inputField=self.findChild(QLineEdit,"message")
         message=inputField.text()
         if message!="":
-            newMessageLayout=own_message_label(message,True)
-            inputField.clear()
             timestamp = math.floor(time.time()*1000)
+            newMessageLayout=own_message_label(self,{"message":message,"sent":True,"time":timestamp,"Toxic":False,"Visible":True})
+
+            inputField.clear()
+            
             self.vlayout.addLayout(own_date_label(timestamp))
             self.vlayout.addLayout(newMessageLayout)
             db.insertMessage(message, "sent", self.findChild(QLabel,"headName").text(), True)
@@ -260,13 +325,14 @@ class Chat(QMainWindow):
 
 
     def display(self):
-        self.my_stream = rtdb.child(user["localId"]).stream(lambda x: stream.stream_handler(x, rtdb, user))
+        self.my_stream = rtdb.child(user["localId"]).stream(lambda x: stream.stream_handler(x, rtdb, user,self))
         self.show()
         #start ML model
         
     def closeEvent(self, event):
         self.my_stream.close()
         event.accept() # let the window close
+        os._exit(0)
 
 class welcome(QMainWindow):
     def __init__(self):
