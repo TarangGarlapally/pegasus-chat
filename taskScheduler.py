@@ -36,7 +36,8 @@ def Train_and_Send_Model():
         "classes_": model.classes_, 
         "coef_" :  model.coef_,  
         "intercept_": model.intercept_, 
-        "n_iter_": model.n_iter_ 
+        "n_iter_": model.n_iter_,
+        "type" : "send"
     }
 
     response = requests.post(search_api_url, headers=headers, params=params)
@@ -45,10 +46,22 @@ def Train_and_Send_Model():
     #Update/ replace the new Model with old one
     #code
 
+def Recieve_Model ():
+    api_key = "api_Key_from_env" 
+    search_api_url = "api_url_to_get_universal_model"
+    headers = {
+        'Authorization': "api_key_with_format" , 
+        'Content-Type': 'application/text'
+    }
+    params = {
+        "type" : "Recieve"
+    }
+    response = requests.post(search_api_url, headers=headers, params=params)
+
 #Scheduling the Job for 2:00 Clock 
 
 schedule.every().day.at("02:00").do(Train_and_Send_Model)
-
+schedule.every().day.at("06:00").do(Recieve_Model)
 
 # while True : 
 #     schedule.run_pending()

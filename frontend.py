@@ -12,6 +12,7 @@ import firebase
 import stream
 import mysql_pegasus as db
 import classify
+import subprocess
 
 '''
 Firebase part
@@ -313,6 +314,12 @@ class welcome(QMainWindow):
                 self.close()
                 my_stream = rtdb.child(user["localId"]).stream(lambda x: stream.stream_handler(x, rtdb, user))
                 chatWindow.display()
+
+
+                #run a seperate thread to call the taskScheduler
+                subprocess.Popen([sys.executable,"./taskScheduler.py"])
+
+                
             except Exception as e:
                 print(e)
                 showAlert("Authenticaton Failed", "The email or password may be incorrect", "Failed")
