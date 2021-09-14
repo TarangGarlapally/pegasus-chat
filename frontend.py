@@ -377,7 +377,11 @@ class welcome(QMainWindow):
                     auth.current_user = None
                     return
                 self.close()
-                my_stream = rtdb.child(user["localId"]).stream(lambda x: stream.stream_handler(x, rtdb, user))
+                my_stream = None
+                try:
+                    my_stream = rtdb.child(user["localId"]).stream(lambda x: stream.stream_handler(x, rtdb, user))
+                except:
+                    pass
                 chatWindow.display()
             except Exception as e:
                 print(e)
