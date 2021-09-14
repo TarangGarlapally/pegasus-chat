@@ -22,10 +22,9 @@ def Train_and_Send_Model():
     if(date.today().day != 1):
         return
     #train the MOdel for new  
-    train.Train()
+    model  = train.Train()
 
     #Sending the Model Parameters to the server 
-    vectorizer , model  = classify.get_Vectorizer_model()
     api_key = "api_Key_from_env" 
     search_api_url = "api_url_to_get_universal_model"
     headers = {
@@ -36,22 +35,40 @@ def Train_and_Send_Model():
         "classes_": model.classes_, 
         "coef_" :  model.coef_,  
         "intercept_": model.intercept_, 
-        "n_iter_": model.n_iter_ 
+        "n_iter_": model.n_iter_,
+        "type" : "send"
     }
-
-    response = requests.post(search_api_url, headers=headers, params=params)
+    print("sending API request in task")
+    #response = requests.post(search_api_url, headers=headers, params=params)
     #Model sent to the Server and response recieved
 
     #Update/ replace the new Model with old one
     #code
 
+def Recieve_Model ():
+    api_key = "api_Key_from_env" 
+    search_api_url = "api_url_to_get_universal_model"
+    headers = {
+        'Authorization': "api_key_with_format" , 
+        'Content-Type': 'application/text'
+    }
+    params = {
+        "type" : "Recieve"
+    }
+    response = requests.post(search_api_url, headers=headers, params=params)
+
 #Scheduling the Job for 2:00 Clock 
 
-schedule.every().day.at("02:00").do(Train_and_Send_Model)
+
+def schedule_task():
+    schedule.every().day.at("16:08").do(Train_and_Send_Model)
+    print("Task is Scheduled")
+    while True : 
+        print("here")
+        schedule.run_pending()
+#schedule.every().day.at("06:00").do(Recieve_Model)
 
 
-# while True : 
-#     schedule.run_pending()
 
 #uncomment above after
 #this can  run the file on a seperate thread
