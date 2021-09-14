@@ -17,56 +17,59 @@ import schedule
 #API 
 import requests 
 import classify
+import numpy
+import pickle
 #API end 
 def Train_and_Send_Model(): 
-    if(date.today().day != 1):
-        return
+    # if(date.today().day != 1):
+    #     return
     #train the MOdel for new  
     model  = train.Train()
 
-    #Sending the Model Parameters to the server 
-    api_key = "api_Key_from_env" 
-    search_api_url = "api_url_to_get_universal_model"
-    headers = {
-        'Authorization': "api_key_with_format" , 
-        'Content-Type': 'application/text'
-    }
-    params  = {
-        "classes_": model.classes_, 
-        "coef_" :  model.coef_,  
-        "intercept_": model.intercept_, 
-        "n_iter_": model.n_iter_,
-        "type" : "send"
-    }
-    print("sending API request in task")
-    #response = requests.post(search_api_url, headers=headers, params=params)
+    #Sending the Model Parameters to the server  
+    search_api_url = "https://insight-middleware-service.herokuapp.com/send-model"
+    data = {'email':'taranggarlapally@gmail.com',
+        'classes_': model.classes_.tolist() ,
+        'coef_':model.coef_.tolist() ,
+        'intercept_': model.intercept_.tolist() ,
+        'n_iter_': model.n_iter_.tolist()}
+
+    resp  = requests.post(url = search_api_url, json=data)
+    #print(resp   , "response of POST request" )
     #Model sent to the Server and response recieved
 
-    #Update/ replace the new Model with old one
-    #code
-
+  
+    
+#Update/ replace the new Model with old one
 def Recieve_Model ():
-    api_key = "api_Key_from_env" 
-    search_api_url = "api_url_to_get_universal_model"
-    headers = {
-        'Authorization': "api_key_with_format" , 
-        'Content-Type': 'application/text'
-    }
-    params = {
-        "type" : "Recieve"
-    }
-    response = requests.post(search_api_url, headers=headers, params=params)
+    search_api_url = "https://insight-middleware-service.herokuapp.com/get-best-model"
+
+    resp = requests.get(url = search_api_url).json()
+    #update Model at 6 o clock
+    #print(resp , "response from GET request")
+    vectorizer, model  = classify.get_Vectorizer_model()
+    model.classes_ = numpy.array(resp["classes_"])
+    model.coef_ = numpy.array(resp["coef_"])
+    model.intercept_ = numpy.array(resp["intercept_"])
+    model.n_iter_ = numpy.array(resp["n_iter_"])
+
+    filename = 'toxic_msgs_logistic_regression_and_vector.pkl'
+    with open(filename, 'wb') as fout:
+        pickle.dump((vectorizer, model), fout)
+    
 
 #Scheduling the Job for 2:00 Clock 
 
 
 def schedule_task():
-    schedule.every().day.at("16:08").do(Train_and_Send_Model)
-    print("Task is Scheduled")
+    #Scheduling tasks for updating the local model
+    schedule.every().day.at("02:00").do(Train_and_Send_Model)
+    schedule.every().day.at("06:00").do(Recieve_Model)
+    #taks are scheduled 
+
+    #loop to run pending tasks
     while True : 
-        print("here")
         schedule.run_pending()
-#schedule.every().day.at("06:00").do(Recieve_Model)
 
 
 
