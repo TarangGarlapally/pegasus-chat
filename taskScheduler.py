@@ -71,7 +71,8 @@ def schedule_task():
     while True : 
         schedule.run_pending()
 
-
+print("starting scheduled task")
+schedule_task()
 
 #uncomment above after
 #this can  run the file on a seperate thread

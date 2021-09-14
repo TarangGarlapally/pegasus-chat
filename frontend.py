@@ -5,15 +5,15 @@ from PyQt5.QtWidgets import QApplication, QHBoxLayout, QLabel, QLineEdit,QMainWi
 import sys,time,os
 import time,functools
 import datetime
-import threading
+#import threading
 import math
 from dns.message import MessageSection
 import firebase
 import stream
 import mysql_pegasus as db
 import classify
-import subprocess
-from taskScheduler import schedule_task
+# import subprocess
+# from taskScheduler import schedule_task
 
 
 '''
@@ -335,14 +335,14 @@ class Chat(QMainWindow):
         self.my_stream.close()
         event.accept() # let the window close
         os._exit(0)
-class myThread (threading.Thread):
-   def __init__(self, threadID, name, counter):
-      threading.Thread.__init__(self)
-      self.threadID = threadID
-      self.name = name
-      self.counter = counter
-   def run(self):
-      schedule_task()
+# class myThread (threading.Thread):
+#    def __init__(self, threadID, name, counter):
+#       threading.Thread.__init__(self)
+#       self.threadID = threadID
+#       self.name = name
+#       self.counter = counter
+#    def run(self):
+#       schedule_task()
         
 
 class welcome(QMainWindow):
@@ -351,9 +351,9 @@ class welcome(QMainWindow):
 
         uic.loadUi('Welcome.ui',self)
 
-        taskScheduler = myThread(1, "taskScheduler" , 1 )
-        taskScheduler.start()     
-        print("after subprocess")
+        # taskScheduler = myThread(1, "taskScheduler" , 1 )
+        # taskScheduler.start()     
+        # print("after subprocess")
 
     def display(self):
         self.show()
