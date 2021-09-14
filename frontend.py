@@ -334,7 +334,7 @@ class Chat(QMainWindow):
     def closeEvent(self, event):
         self.my_stream.close()
         event.accept() # let the window close
-<<<<<<< HEAD
+        os._exit(0)
 class myThread (threading.Thread):
    def __init__(self, threadID, name, counter):
       threading.Thread.__init__(self)
@@ -343,10 +343,8 @@ class myThread (threading.Thread):
       self.counter = counter
    def run(self):
       schedule_task()
-=======
-        os._exit(0)
+        
 
->>>>>>> 3e69e2bad5338061c37fff73ee396a28b98d209e
 class welcome(QMainWindow):
     def __init__(self):
         super(welcome,self).__init__()
