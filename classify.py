@@ -21,5 +21,4 @@ def checkIfToxic(message):
     df = vectorizer.transform(pd.DataFrame({"words":[message]})["words"])
     result = model.predict(df)
     
-    print(result[0] == 1 )
     return result[0] == 1

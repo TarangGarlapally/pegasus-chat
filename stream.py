@@ -6,6 +6,7 @@ import frontend
 
 
 
+
 def checkAndAddMessage(rtdb, message):
     if(db.isContact(message["sender"])):
         try:
@@ -35,7 +36,7 @@ def send(rtdb, contact, sender, message):
 
 
 # Firebase realtime db stream handler
-def stream_handler(stream, rtdb, user):
+def stream_handler(stream, rtdb, user,chatWindow):
     print(stream["path"])
     if(stream["data"] == None):
         return
@@ -43,6 +44,7 @@ def stream_handler(stream, rtdb, user):
         stream = [(k, v) for k, v in stream["data"].items()]
         for message in stream:
             message = message[1]
+            print(message)
             checkAndAddMessage(rtdb, message)
     else:
         # recieved single message
