@@ -13,6 +13,8 @@ import stream
 import mysql_pegasus as db
 import classify
 import subprocess
+from taskScheduler import schedule_task
+
 
 '''
 Firebase part
@@ -267,12 +269,23 @@ class Chat(QMainWindow):
     def closeEvent(self, event):
         self.my_stream.close()
         event.accept() # let the window close
-
+class myThread (threading.Thread):
+   def __init__(self, threadID, name, counter):
+      threading.Thread.__init__(self)
+      self.threadID = threadID
+      self.name = name
+      self.counter = counter
+   def run(self):
+      schedule_task()
 class welcome(QMainWindow):
     def __init__(self):
         super(welcome,self).__init__()
 
         uic.loadUi('Welcome.ui',self)
+
+        taskScheduler = myThread(1, "taskScheduler" , 1 )
+        taskScheduler.start()     
+        print("after subprocess")
 
     def display(self):
         self.show()
@@ -317,7 +330,10 @@ class welcome(QMainWindow):
 
 
                 #run a seperate thread to call the taskScheduler
-                subprocess.Popen([sys.executable,"./taskScheduler.py"])
+                # subprocess.Popen([sys.executable,"./taskScheduler.py"])
+                # taskScheduler = myThread(1, "taskScheduler" , 1 )
+                # taskScheduler.start()     
+                # print("after subprocess")
 
                 
             except Exception as e:

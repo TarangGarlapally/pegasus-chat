@@ -40,5 +40,6 @@ def Train():
         pd.DataFrame({"words":[i for i in words]})["words"]
     )
     model.fit(words , pd.DataFrame({"toxic":[i for i in toxic]})["toxic"])
+    return model 
 
-Train()
+# Train()
